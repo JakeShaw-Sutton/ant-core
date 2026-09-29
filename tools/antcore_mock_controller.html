@@ -1,0 +1,44 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ant Core Mock Controller</title>
+<style>
+body{margin:0;background:#0b0e11;color:#edf2f4;font-family:system-ui,sans-serif;padding:20px}
+section{max-width:760px;border:1px solid #33404c;background:#151a20;border-radius:8px;padding:14px}
+button,input{min-height:38px;border-radius:6px;border:1px solid #33404c;background:#1d242c;color:#eef3f5;padding:7px 10px}
+pre{white-space:pre-wrap;overflow:auto}
+</style>
+<section>
+  <h1>Ant Core Mock Controller</h1>
+  <p>Use this from a laptop connected to the Ant Core AP to validate WebSocket control payloads without the full UI.</p>
+  <label>Host <input id="host" value="192.168.4.1"></label>
+  <label>Admin PIN <input id="pin" type="password" value="antcore"></label>
+  <button onclick="login()">Login</button>
+  <button onclick="connect()">Connect</button>
+  <button onclick="send({type:'arm'})">Arm</button>
+  <button onclick="send({type:'disarm'})">Disarm</button>
+  <button onclick="pulse()">Drive Pulse</button>
+  <pre id="log"></pre>
+</section>
+<script>
+let ws;
+let token="";
+const clientId="mock-"+Math.random().toString(16).slice(2,10);
+function write(line){log.textContent=(line+"\\n"+log.textContent).slice(0,5000)}
+async function login(){
+  const r=await fetch(`http://${host.value}/api/auth/login`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin:pin.value})});
+  const j=await r.json();
+  token=j.token||"";
+  write(token?"logged in":"login failed");
+}
+function connect(){
+  ws=new WebSocket(`ws://${host.value}/ws`);
+  ws.onopen=()=>{write("connected");send({type:"claimControl"});};
+  ws.onclose=()=>write("closed");
+  ws.onmessage=e=>write(e.data);
+}
+function send(obj){ if(ws&&ws.readyState===1) ws.send(JSON.stringify({...obj,token,clientId})); }
+function pulse(){
+  send({type:"control",leftY:0.25,leftX:0,buttons:{}});
+  setTimeout(()=>send({type:"control",leftY:0,leftX:0,buttons:{}}),180);
+}
+</script>

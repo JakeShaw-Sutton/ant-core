@@ -1,0 +1,13 @@
+.pio/
+__pycache__/
+*.pyc
+.pytest_cache/
+compile_commands.json
+*.log
+reports/
+include/antcore_local_secrets.h
+.vscode/
+.docx-render/
+.env
+.env.*
+!.env.example

@@ -1,0 +1,9 @@
+pyserial>=3.5
+pytest>=8.0
+websocket-client>=1.9
+platformio>=6.1
+opencv-python>=4.9
+imageio>=2.34
+imageio-ffmpeg>=0.5
+numpy>=1.26
+pillow>=10

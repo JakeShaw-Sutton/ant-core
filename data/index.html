@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ant Core</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true"><span>AC</span><i>03</i></div>
+      <div>
+        <p class="eyebrow">XIAO ESP32-S3 robot core</p>
+        <h1>Ant Core</h1>
+      </div>
+    </div>
+    <div class="status-strip">
+      <span id="authBadge" class="badge warn">LOCKED</span>
+      <span id="wifiBadge" class="badge">AP</span>
+      <span id="pitBadge" class="badge">PIT OFF</span>
+      <span id="armBadge" class="badge danger">DISARMED</span>
+      <span id="batteryBadge" class="badge">Battery --.- V</span>
+      <button id="loginBtn" class="text-button" title="Open an authenticated setup session" type="button">Login</button>
+      <button id="pitModeBtn" class="text-button" title="Toggle pit mode output lock" type="button">Pit Mode</button>
+      <button id="armBtn" class="icon-button danger" title="Toggle live robot arm state" type="button">ARM</button>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Main pages">
+    <button class="tab" data-tab="fight" type="button">Fight</button>
+    <button class="tab" data-tab="setup" type="button">Setup</button>
+    <button class="tab" data-tab="garage" type="button">Garage</button>
+    <button class="tab active" data-tab="dashboard" type="button">Dashboard</button>
+    <button class="tab" data-tab="controller" type="button">Controller</button>
+    <button class="tab" data-tab="drive" type="button">Drive</button>
+    <button class="tab" data-tab="servos" type="button">Servos</button>
+    <button class="tab" data-tab="packs" type="button">Packs</button>
+    <button class="tab" data-tab="fpv" type="button">FPV</button>
+    <button class="tab" data-tab="spectator" type="button">Spectator</button>
+    <button class="tab" data-tab="ota" type="button">OTA</button>
+    <button class="tab" data-tab="diagnostics" type="button">Diagnostics</button>
+  </nav>
+
+  <main>
+    <section id="fight" class="page fight-page">
+      <div class="fight-shell">
+        <aside class="fight-side">
+          <div class="fight-avatar" id="fightAvatar">AC</div>
+          <h2 id="fightRobotName">Ant Core</h2>
+          <div class="telemetry-grid compact">
+            <div><span>Arm</span><strong id="fightArmState">DISARMED</strong></div>
+            <div><span>Weapon</span><strong id="fightWeaponState">SAFE</strong></div>
+            <div><span>Battery</span><strong id="fightBattery">--.- V</strong></div>
+            <div><span>Source</span><strong id="fightSource">none</strong></div>
+            <div><span>Signal</span><strong id="fightSignal">idle</strong></div>
+            <div><span>Timer</span><strong id="fightTimer">02:00</strong></div>
+          </div>
+          <div class="actions vertical">
+            <button id="fightStartBtn" class="text-button" type="button">Start Fight</button>
+            <button id="fightCountdownBtn" class="text-button" type="button">Countdown</button>
+            <button id="fightExitBtn" class="text-button" type="button">Exit Fight View</button>
+          </div>
+        </aside>
+        <div class="fight-video">
+          <img id="fightStream" alt="Fight FPV stream">
+          <div id="fightBlank" class="fpv-blank">FPV waiting</div>
+          <div id="fightOverlay" class="fight-overlay">
+            <span id="fightReadyBadge" class="badge warn">not ready</span>
+            <strong id="fightCountdown">READY</strong>
+            <span id="fightWeaponHot" class="weapon-hot">weapon safe</span>
+          </div>
+        </div>
+        <aside class="fight-side">
+          <button id="fightDisarmBtn" class="mega-disarm" type="button">DISARM</button>
+          <section class="mini-panel">
+            <div class="panel-head">
+              <h2>Ready For Bout</h2>
+              <button id="readyBoutBtn" class="text-button" type="button">Run Check</button>
+            </div>
+            <div id="preFightChecklist" class="checklist"></div>
+          </section>
+          <section class="mini-panel">
+            <div class="panel-head">
+              <h2>Debrief</h2>
+              <span id="debriefBadge" class="badge">idle</span>
+            </div>
+            <div id="debriefSummary" class="debrief"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section id="setup" class="page">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>First Run</h2>
+            <span id="wizardBadge" class="badge warn">setup</span>
+          </div>
+          <div id="wizardSteps" class="wizard-steps"></div>
+        </section>
+        <section class="panel">
+          <h2>Match Timer</h2>
+          <div class="timer-face" id="matchTimer">02:00</div>
+          <div class="actions">
+            <button id="timerStartBtn" class="text-button" type="button">Start</button>
+            <button id="timerPauseBtn" class="text-button" type="button">Pause</button>
+            <button id="timerResetBtn" class="text-button" type="button">Reset</button>
+          </div>
+          <div class="form-grid">
+            <label>Duration sec <input id="timerDuration" type="number" min="30" max="300" step="15" value="120"></label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>AP Setup</h2>
+            <span id="setupQrBadge" class="badge">QR</span>
+          </div>
+          <div class="qr-wrap">
+            <div id="setupQr" class="qr-grid" aria-label="QR code for Ant Core AP setup URL"></div>
+            <div class="qr-copy">
+              <span>AP URL</span>
+              <strong id="setupQrUrl">http://192.168.4.1/</strong>
+            </div>
+          </div>
+          <p class="helper">Scan after joining the Ant Core AP, or use the captive portal prompt.</p>
+        </section>
+        <section class="panel wide">
+          <div class="panel-head">
+            <h2>Commissioning Flow</h2>
+            <span id="setupFlowBadge" class="badge warn">not ready</span>
+          </div>
+          <p class="helper">Work down this list before the robot leaves the bench. Direction and servo tests still require the live-output lock in Diagnostics.</p>
+          <div class="setup-meter" aria-hidden="true"><span id="setupProgressBar"></span></div>
+          <div id="setupFlow" class="setup-flow"></div>
+          <div class="actions">
+            <button id="setupNextBtn" class="text-button" type="button">Open Next Step</button>
+            <button id="setupExportBtn" class="text-button" type="button">Export Config</button>
+            <button id="setupProfilesBtn" class="text-button" type="button">Profiles</button>
+            <button id="setupPitShortcutBtn" class="text-button danger" type="button">Pit Mode</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="garage" class="page">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Robot Garage</h2>
+            <button id="saveGarageBtn" class="text-button" type="button">Save Garage</button>
+          </div>
+          <div class="garage-preview">
+            <div id="garageAvatarPreview" class="fight-avatar">AC</div>
+            <div>
+              <h3 id="garageRobotPreview">Ant Core</h3>
+              <p id="garageMetaPreview" class="helper">skid / pusher</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>Robot Name <input id="garageRobotName" type="text" maxlength="31" autocomplete="off"></label>
+            <label>Profile Name <input id="garageProfileName" type="text" maxlength="23" autocomplete="off"></label>
+            <label>Bot Type <select id="garageBotType"><option value="skid">Skid steer</option><option value="invertible">Invertible</option><option value="wedge">Wedge</option><option value="control">Control bot</option><option value="experimental">Experimental</option></select></label>
+            <label>Weapon Type <select id="garageWeaponType"><option value="pusher">Pusher</option><option value="vertical spinner">Vertical spinner</option><option value="horizontal spinner">Horizontal spinner</option><option value="flipper">Flipper</option><option value="grabber">Grabber</option><option value="lifter">Lifter</option></select></label>
+            <label>Accent <input id="garageAccent" type="color" value="#ffca4f"></label>
+            <label>Avatar <select id="garageAvatar"><option value="ant">Ant</option><option value="wedge">Wedge</option><option value="spinner">Spinner</option><option value="claw">Claw</option><option value="bolt">Bolt</option><option value="shield">Shield</option></select></label>
+            <label class="wide-label">Notes <textarea id="garageNotes" maxlength="159" rows="4"></textarea></label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Saved Robots</h2>
+            <span id="garageProfileBadge" class="badge">profiles</span>
+          </div>
+          <div id="robotGarageCards" class="garage-grid"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="dashboard" class="page active">
+      <div id="safetyBanners" class="banner-stack"></div>
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Live State</h2>
+            <button id="disarmBtn" class="text-button danger" type="button">Disarm</button>
+          </div>
+          <div class="telemetry-grid">
+            <div><span>Source</span><strong id="sourceValue">none</strong></div>
+            <div><span>Controller</span><strong id="controllerValue">searching</strong></div>
+            <div><span>Battery</span><strong id="batteryValue">--.- V</strong></div>
+            <div><span>Camera</span><strong id="cameraValue">not ready</strong></div>
+            <div><span>IMU</span><strong id="imuValue">not fitted</strong></div>
+            <div><span>Network</span><strong id="networkValue">AP only</strong></div>
+            <div><span>Clients</span><strong id="clientValue">0</strong></div>
+            <div><span>Captive</span><strong id="captiveValue">off</strong></div>
+            <div><span>Reset</span><strong id="resetValue">unknown</strong></div>
+          </div>
+          <p id="safeLine" class="helper">The robot boots disarmed. Outputs stop on stale control, OTA, low battery, or controller loss.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Outputs</h2>
+            <button id="refreshBtn" class="icon-button" title="Refresh status" type="button">R</button>
+          </div>
+          <div id="motorBars" class="bars"></div>
+          <div id="servoBars" class="bars compact"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Setup Checklist</h2>
+            <span id="setupBadge" class="badge warn">review</span>
+          </div>
+          <div id="setupChecklist" class="checklist"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Weapon Safety</h2>
+            <button id="weaponArmBtn" class="text-button danger" type="button">Weapon Arm</button>
+          </div>
+          <p id="weaponLine" class="helper">Weapon output stays safe until robot and weapon are both armed.</p>
+        </section>
+      </div>
+    </section>
+
+    <section id="controller" class="page">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Xbox Pairing</h2>
+            <span id="scanBadge" class="badge">scan</span>
+          </div>
+          <p class="helper">Put the Xbox controller in pairing mode, then scan. The Menu button toggles arm/disarm.</p>
+          <div class="actions">
+            <button id="scanBtn" class="text-button" type="button">Scan / Connect</button>
+            <button id="forgetBtn" class="text-button danger" type="button">Forget Controller</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Control Names</h2>
+          <div class="chips" id="controlChips"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Live Inspector</h2>
+            <span id="driverBadge" class="badge">none</span>
+          </div>
+          <div id="controllerInspector" class="inspector"></div>
+        </section>
+        <section class="panel wide">
+          <div class="panel-head">
+            <h2>Control Overlay Trainer</h2>
+            <span id="trainerBadge" class="badge">map</span>
+          </div>
+          <div id="controlTrainer" class="controller-diagram"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Calibration</h2>
+            <button id="saveCalibrationBtn" class="text-button" type="button">Save Calibration</button>
+          </div>
+          <p class="helper">Use mapping test mode while checking raw controls. Center capture uses the current Xbox raw axis values and keeps outputs locked safe.</p>
+          <div class="form-grid">
+            <label class="switch"><input id="calibrationEnabled" type="checkbox"> apply Xbox axis calibration</label>
+            <label class="switch"><input id="mappingTestMode" type="checkbox"> mapping test mode</label>
+          </div>
+          <div class="actions">
+            <button id="captureCenterBtn" class="text-button" type="button">Capture Centers</button>
+            <button id="resetCalibrationBtn" class="text-button danger" type="button">Reset Calibration</button>
+          </div>
+          <div id="calibrationRows" class="rows"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Self Right</h2>
+            <span id="selfRightBadge" class="badge">disabled</span>
+          </div>
+          <div class="form-grid">
+            <label class="switch"><input id="selfRightEnabled" type="checkbox"> self-right macro enabled</label>
+            <label>Target <select id="selfRightTarget"><option value="servo1">Servo 1</option><option value="servo2">Servo 2</option><option value="weapon">Weapon motor</option></select></label>
+            <label>Servo PWM us <input id="selfRightServoUs" type="number" min="500" max="2500" step="10"></label>
+            <label>Weapon Power <input id="selfRightMotorPower" type="number" min="-1" max="1" step="0.05"></label>
+            <label>Duration ms <input id="selfRightDuration" type="number" min="50" max="2000" step="50"></label>
+            <label>Cooldown ms <input id="selfRightCooldown" type="number" min="250" max="10000" step="250"></label>
+            <label class="switch"><input id="selfRightRequireWeaponArm" type="checkbox"> require weapon arm for weapon target</label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Action Mapping</h2>
+            <button id="saveMappingBtn" class="text-button" type="button">Save Mapping</button>
+          </div>
+          <div class="form-grid">
+            <label class="switch"><input id="mapXboxArmEnabled" type="checkbox"> Xbox arm toggle enabled</label>
+            <label>Robot Arm <select id="mapArmButton"></select></label>
+            <label>Throttle Axis <select id="mapThrottleAxis"></select></label>
+            <label>Turn Axis <select id="mapTurnAxis"></select></label>
+            <label>Tank Left Axis <select id="mapLeftTankAxis"></select></label>
+            <label>Tank Right Axis <select id="mapRightTankAxis"></select></label>
+            <label>Weapon Arm <select id="mapWeaponArmButton"></select></label>
+            <label>Weapon Input <select id="mapWeaponInput"></select></label>
+            <label>Drive Invert <select id="mapDriveInvertButton"></select></label>
+            <label>Turbo Mode <select id="mapTurboButton"></select></label>
+            <label>Precision Mode <select id="mapPrecisionButton"></select></label>
+          </div>
+          <div id="mappingLearnStatus" class="learn-status">Use Learn on a mapping field, then move an axis or press a button on the active controller.</div>
+          <h3>Action Slots</h3>
+          <p class="helper">Optional edge-triggered actions for extra buttons. Leave a slot unassigned unless you need another safety, weapon, or drive command.</p>
+          <div id="macroConfig" class="rows"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="drive" class="page">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Drive Mixer</h2>
+          <button id="saveDriveBtn" class="text-button" type="button">Save Config</button>
+        </div>
+        <div class="preset-grid drive-presets" aria-label="Drive presets">
+          <button class="text-button" data-drive-preset="skid" title="One left stick drives a two wheel skid steer robot" type="button">2WD Skid</button>
+          <button class="text-button" data-drive-preset="arcade" title="One stick throttle and turn with current motor choices" type="button">Arcade</button>
+          <button class="text-button" data-drive-preset="tank" title="Left and right sticks drive each side independently" type="button">Tank</button>
+          <button class="text-button" data-drive-preset="invertible" title="Arcade drive with a mapped invert button for upside-down driving" type="button">Invertible</button>
+          <button class="text-button" data-drive-preset="gyro" title="Arcade drive with BMI270 heading hold enabled when fitted" type="button">Gyro Hold</button>
+        </div>
+        <div class="form-grid">
+          <label>Drive Mode <select id="driveMode"><option value="arcade">Arcade / skid steer</option><option value="tank">Tank drive</option></select></label>
+          <label>Throttle Axis <select id="driveThrottleAxis"></select></label>
+          <label>Turn Axis <select id="driveTurnAxis"></select></label>
+          <label>Deadband <input id="driveDeadband" type="number" step="0.01" min="0" max="0.45"></label>
+          <label>Expo <input id="driveExpo" type="number" step="0.01" min="0" max="1"></label>
+          <label>Throttle Scale <input id="throttleScale" type="number" step="0.01" min="0" max="1"></label>
+          <label>Turn Scale <input id="turnScale" type="number" step="0.01" min="0" max="1"></label>
+          <label>Left Motor <select id="leftMotor"></select></label>
+          <label>Right Motor <select id="rightMotor"></select></label>
+          <label class="switch"><input id="driveInvertible" type="checkbox"> invertible robot</label>
+          <label>Invert Button <select id="driveInvertButton"></select></label>
+          <label>Turbo Button <select id="driveTurboButton"></select></label>
+          <label>Precision Button <select id="drivePrecisionButton"></select></label>
+          <label>Turbo Scale <input id="driveTurboScale" type="number" step="0.05" min="0.1" max="1"></label>
+          <label>Precision Scale <input id="drivePrecisionScale" type="number" step="0.05" min="0.1" max="1"></label>
+          <label class="switch"><input id="driveGyroAssist" type="checkbox"> gyro assist when IMU fitted</label>
+          <label>Gyro Gain <input id="driveGyroGain" type="number" step="0.001" min="0" max="0.1"></label>
+          <label class="switch"><input id="driveAutoInvert" type="checkbox"> auto-invert with BMI270</label>
+          <label>Auto-Invert Z Threshold <input id="driveAutoInvertThreshold" type="number" step="0.05" min="-1.5" max="-0.05"></label>
+        </div>
+        <div id="motorConfig" class="rows"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Motor 3 Weapon</h2>
+          <label class="switch"><input id="weaponEnabled" type="checkbox"> enabled</label>
+        </div>
+        <div class="preset-grid weapon-presets" aria-label="Weapon presets">
+          <button class="text-button" data-weapon-preset="disabled" title="Disable Motor 3 weapon output" type="button">Disabled</button>
+          <button class="text-button" data-weapon-preset="brushed" title="Right trigger proportional brushed weapon motor" type="button">Brushed</button>
+          <button class="text-button" data-weapon-preset="reversible" title="Right stick proportional reversible weapon output" type="button">Reversible</button>
+          <button class="text-button" data-weapon-preset="spinner" title="Right trigger spinner with ramp limits" type="button">Spinner</button>
+          <button class="text-button" data-weapon-preset="lifter" title="Right bumper momentary lifter or flipper output" type="button">Lifter</button>
+          <button class="text-button" data-weapon-preset="toggle" title="Right bumper toggled weapon output" type="button">Toggle</button>
+          <button class="text-button" data-weapon-preset="verticalSpinner" title="Vertical spinner personality with slower ramp-up" type="button">Vertical Spinner</button>
+          <button class="text-button" data-weapon-preset="horizontalSpinner" title="Horizontal spinner personality with strong ramp-down" type="button">Horizontal Spinner</button>
+          <button class="text-button" data-weapon-preset="flipper" title="Momentary flipper output profile" type="button">Flipper</button>
+          <button class="text-button" data-weapon-preset="grabber" title="Servo-style grabber control hints" type="button">Grabber</button>
+          <button class="text-button" data-weapon-preset="pusher" title="No active weapon, safe pusher defaults" type="button">Pusher</button>
+        </div>
+        <div class="form-grid">
+          <label>Profile <select id="weaponProfile"><option value="brushed">Brushed motor</option><option value="spinner">Spinner</option><option value="lifter">Lifter / flipper</option><option value="reversible">Reversible weapon</option></select></label>
+          <label>Input <select id="weaponInput"></select></label>
+          <label>Arm Button <select id="weaponArmButton"></select></label>
+          <label>Mode <select id="weaponToggle"><option value="false">Momentary</option><option value="true">Toggle</option></select></label>
+          <label>Button Power <input id="weaponButtonPower" type="number" step="0.05" min="-1" max="1"></label>
+          <label>Max Output <input id="weaponMaxOutput" type="number" step="0.05" min="0" max="1"></label>
+          <label>Spinner Ramp Up / sec <input id="weaponRampUp" type="number" step="0.1" min="0.1" max="20"></label>
+          <label>Spinner Ramp Down / sec <input id="weaponRampDown" type="number" step="0.1" min="0.1" max="30"></label>
+          <label class="switch"><input id="weaponInvert" type="checkbox"> invert</label>
+          <label class="switch"><input id="weaponRequireArm" type="checkbox"> require weapon arm</label>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Drive Direction Wizard</h2>
+          <span id="driveWizardBadge" class="badge warn">unchecked</span>
+        </div>
+        <p class="helper">Lift wheels clear, use your own safe test method, then answer what happened. This wizard only flips motor inversion; it never pulses outputs.</p>
+        <div class="form-grid">
+          <label>Left wheel pushed forward? <select id="leftWheelForward"><option value="yes">Yes</option><option value="no">No, reverse it</option></select></label>
+          <label>Right wheel pushed forward? <select id="rightWheelForward"><option value="yes">Yes</option><option value="no">No, reverse it</option></select></label>
+        </div>
+        <div class="actions">
+          <button id="driveWizardApplyBtn" class="text-button" type="button">Apply Direction</button>
+          <button id="driveWizardSaveBtn" class="text-button" type="button">Save Direction</button>
+        </div>
+        <p id="driveWizardStatus" class="helper">Direction check has not been recorded for this browser.</p>
+      </section>
+    </section>
+
+    <section id="servos" class="page">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Servo Mapping</h2>
+          <button id="saveServosBtn" class="text-button" type="button">Save Config</button>
+        </div>
+        <div id="servoConfig" class="rows"></div>
+      </section>
+    </section>
+
+    <section id="packs" class="page">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Battery Packs</h2>
+            <button id="savePackBtn" class="text-button" type="button">Save Pack</button>
+          </div>
+          <div class="form-grid">
+            <label>Saved Pack <select id="packSelect"></select></label>
+            <label>Pack Name <input id="packName" type="text" maxlength="31" autocomplete="off"></label>
+            <label>Charge Voltage <input id="packChargeVoltage" type="number" min="5" max="9.2" step="0.01" value="8.40"></label>
+            <label>Cycle Count <input id="packCycles" type="number" min="0" max="999" step="1" value="0"></label>
+            <label class="switch"><input id="packWeak" type="checkbox"> mark weak</label>
+            <label class="wide-label">Notes <textarea id="packNotes" maxlength="95" rows="4"></textarea></label>
+          </div>
+          <div class="actions">
+            <button id="newPackBtn" class="text-button" type="button">New Pack</button>
+            <button id="deletePackBtn" class="text-button danger" type="button">Delete Pack</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Pack Health</h2>
+            <span id="packSagValue" class="badge">sag --</span>
+          </div>
+          <div id="packList" class="pack-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="fpv" class="page">
+      <div class="fpv-shell">
+        <div class="control-rail left-rail">
+          <div class="top-pad">
+            <button class="shoulder-button" data-pad="leftBumper" type="button" title="Left bumper">LB</button>
+            <label class="trigger-control" title="Hold to send left trigger">
+              <span>LT</span>
+              <input id="leftTriggerPad" data-trigger="leftTrigger" type="range" min="0" max="1" step="0.01" value="0">
+            </label>
+          </div>
+          <div class="stick" id="leftStick" data-stick="left" title="Virtual left stick drive control"><span></span></div>
+          <div class="aux-buttons">
+            <button data-pad="view" type="button" title="View button">VIEW</button>
+            <button data-pad="leftStickButton" type="button" title="Left stick click">LS</button>
+          </div>
+          <div class="dpad">
+            <button data-pad="dpadUp" type="button">&uarr;</button>
+            <button data-pad="dpadLeft" type="button">&larr;</button>
+            <button data-pad="dpadRight" type="button">&rarr;</button>
+            <button data-pad="dpadDown" type="button">&darr;</button>
+          </div>
+        </div>
+        <div class="fpv-stage">
+          <img id="fpvStream" alt="FPV stream">
+          <div id="fpvBlank" class="fpv-blank">Camera stream waiting</div>
+        </div>
+        <div class="control-rail right-rail">
+          <div class="top-pad">
+            <label class="trigger-control" title="Hold to send right trigger">
+              <span>RT</span>
+              <input id="rightTriggerPad" data-trigger="rightTrigger" type="range" min="0" max="1" step="0.01" value="0">
+            </label>
+            <button class="shoulder-button" data-pad="rightBumper" type="button" title="Right bumper">RB</button>
+          </div>
+          <div class="face-buttons">
+            <button data-pad="y" type="button">Y</button>
+            <button data-pad="x" type="button">X</button>
+            <button data-pad="b" type="button">B</button>
+            <button data-pad="a" type="button">A</button>
+          </div>
+          <div class="stick" id="rightStick" data-stick="right" title="Virtual right stick servo control"><span></span></div>
+          <div class="aux-buttons">
+            <button data-pad="rightStickButton" type="button" title="Right stick click">RS</button>
+            <button data-pad="menu" type="button" title="Menu button">MENU</button>
+          </div>
+          <button id="takeControlBtn" class="arm-pad-button" type="button">TAKE</button>
+          <button id="releaseControlBtn" class="arm-pad-button" type="button">FREE</button>
+          <button id="padArmBtn" class="arm-pad-button danger" type="button">ARM</button>
+        </div>
+      </div>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Camera Settings</h2>
+          <button id="saveCameraBtn" class="text-button" type="button">Save Camera</button>
+        </div>
+        <div class="form-grid">
+          <label>Frame Size <select id="cameraFrameSize"><option value="qqvga">QQVGA low latency</option><option value="qvga">QVGA balanced</option><option value="vga">VGA detail</option></select></label>
+          <label>JPEG Quality <input id="cameraQuality" type="number" min="10" max="35" step="1"></label>
+          <label>Brightness <input id="cameraBrightness" type="number" min="-2" max="2" step="1"></label>
+          <label>Contrast <input id="cameraContrast" type="number" min="-2" max="2" step="1"></label>
+          <label>Saturation <input id="cameraSaturation" type="number" min="-2" max="2" step="1"></label>
+          <label class="switch"><input id="cameraHmirror" type="checkbox"> mirror image</label>
+          <label class="switch"><input id="cameraVflip" type="checkbox"> flip image</label>
+        </div>
+      </section>
+    </section>
+
+    <section id="spectator" class="page spectator-page">
+      <div class="spectator-shell">
+        <div class="spectator-media">
+          <img id="spectatorStream" alt="Spectator FPV stream">
+          <div id="spectatorBlank" class="fpv-blank">FPV waiting</div>
+        </div>
+        <aside class="spectator-status">
+          <div class="fight-avatar" id="spectatorAvatar">AC</div>
+          <h2 id="spectatorRobotName">Ant Core</h2>
+          <div class="telemetry-grid compact">
+            <div><span>Status</span><strong id="spectatorArm">DISARMED</strong></div>
+            <div><span>Weapon</span><strong id="spectatorWeapon">SAFE</strong></div>
+            <div><span>Battery</span><strong id="spectatorBattery">--.- V</strong></div>
+            <div><span>Timer</span><strong id="spectatorTimer">02:00</strong></div>
+            <div><span>Source</span><strong id="spectatorSource">none</strong></div>
+            <div><span>Signal</span><strong id="spectatorSignal">idle</strong></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="ota" class="page">
+      <div class="grid two">
+        <section class="panel wide">
+          <div class="panel-head">
+            <h2>Installed Versions</h2>
+            <span id="otaVersionBadge" class="badge">checking</span>
+          </div>
+          <div class="telemetry-grid">
+            <div><span>Firmware</span><strong id="firmwareVersionValue">unknown</strong></div>
+            <div><span>Web Assets</span><strong id="filesystemVersionValue">unknown</strong></div>
+            <div><span>Schema</span><strong id="schemaVersionValue">--</strong></div>
+            <div><span>Restart</span><strong id="restartPendingValue">idle</strong></div>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Firmware OTA</h2>
+          <p class="helper">Upload the PlatformIO firmware binary. The robot disarms before the update starts.</p>
+          <input id="firmwareFile" type="file" accept=".bin">
+          <button id="firmwareUploadBtn" class="text-button" type="button">Upload Firmware</button>
+        </section>
+        <section class="panel">
+          <h2>Interface OTA</h2>
+          <p class="helper">Upload a LittleFS image for the hosted web interface.</p>
+          <input id="fsFile" type="file" accept=".bin">
+          <button id="fsUploadBtn" class="text-button" type="button">Upload Filesystem</button>
+        </section>
+      </div>
+    </section>
+
+    <section id="diagnostics" class="page">
+      <div class="grid two">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Config Health</h2>
+            <span id="configHealthBadge" class="badge">checking</span>
+          </div>
+          <div id="configHealth" class="checklist"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Safety</h2>
+            <button id="saveSafetyBtn" class="text-button" type="button">Save</button>
+          </div>
+          <div class="form-grid">
+            <label class="switch"><input id="pitMode" type="checkbox"> pit mode output lock</label>
+            <label class="switch"><input id="requireControlSource" type="checkbox"> require a fresh control source to arm</label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Output Test</h2>
+            <span id="liveOutputBadge" class="badge danger">locked</span>
+          </div>
+          <p class="helper">Manual pulses are for direction and servo limit checks. They still require admin login, live-output enable, robot arm, and a physically safe setup.</p>
+          <div class="form-grid">
+            <label class="switch"><input id="liveOutputEnabled" type="checkbox"> allow live output tests</label>
+            <label>Motor <select id="testMotor"><option value="1">Motor 1</option><option value="2">Motor 2</option><option value="3">Motor 3</option></select></label>
+            <label>Motor Power <input id="testMotorPower" type="number" min="-1" max="1" step="0.05" value="0.15"></label>
+            <label>Motor Duration ms <input id="testMotorDuration" type="number" min="1" max="2000" step="50" value="250"></label>
+            <label>Servo <select id="testServo"><option value="1">Servo 1</option><option value="2">Servo 2</option></select></label>
+            <label>Servo PWM us <input id="testServoUs" type="number" min="500" max="2500" step="10" value="1500"></label>
+            <label>Servo Duration ms <input id="testServoDuration" type="number" min="1" max="2000" step="50" value="250"></label>
+          </div>
+          <div class="actions">
+            <button id="setLiveOutputBtn" class="text-button danger" type="button">Set Live Output</button>
+            <button id="runMotorTestBtn" class="text-button danger" type="button">Pulse Motor</button>
+            <button id="runServoTestBtn" class="text-button danger" type="button">Pulse Servo</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Battery</h2>
+            <button id="saveBatteryBtn" class="text-button" type="button">Save</button>
+          </div>
+          <div class="form-grid">
+            <label class="switch"><input id="batteryEnabled" type="checkbox"> safety enabled</label>
+            <label class="switch"><input id="benchMode" type="checkbox"> USB bench mode</label>
+            <label>Calibration <input id="batteryCalibration" type="number" step="0.01" min="0.7" max="1.3"></label>
+            <label>Warning V <input id="batteryWarn" type="number" step="0.1" min="5" max="9"></label>
+            <label>Critical V <input id="batteryCritical" type="number" step="0.1" min="5" max="9"></label>
+            <label class="switch"><input id="derateEnabled" type="checkbox"> derate before critical</label>
+            <label>Derate V <input id="derateVoltage" type="number" step="0.1" min="5" max="9"></label>
+            <label>Derate Scale <input id="derateScale" type="number" step="0.05" min="0.15" max="1"></label>
+          </div>
+          <div class="telemetry-grid compact battery-calibration-live">
+            <div><span>Raw ADC</span><strong id="batteryAdcValue">--</strong></div>
+            <div><span>Pack</span><strong id="batteryPackValue">--</strong></div>
+            <div><span>Cell</span><strong id="batteryCellValue">--</strong></div>
+            <div><span>Divider</span><strong id="batteryDividerValue">x3.00</strong></div>
+            <div><span>Calibration</span><strong id="batteryCalibrationValue">--</strong></div>
+            <div><span>Thresholds</span><strong id="batteryThresholdValue">--</strong></div>
+            <div><span>Derating</span><strong id="batteryDerateState">--</strong></div>
+            <div><span>Bench</span><strong id="batteryBenchState">--</strong></div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Security</h2>
+            <button id="saveSecurityBtn" class="text-button" type="button">Save</button>
+          </div>
+          <p class="helper">Passwords are write-only in the browser. Leave fields blank to keep the value already saved on the board.</p>
+          <div class="form-grid">
+            <label>Robot Name <input id="robotName" type="text" maxlength="31" autocomplete="off"></label>
+            <label>Profile Name <input id="activeProfile" type="text" maxlength="23" autocomplete="off"></label>
+            <label class="switch"><input id="authEnabled" type="checkbox"> require admin PIN</label>
+            <label>Admin PIN <input id="adminPin" type="password" maxlength="19" autocomplete="new-password"></label>
+            <label>AP Password <input id="apPassword" type="password" maxlength="63" autocomplete="new-password"></label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Profiles</h2>
+            <span id="profilesBadge" class="badge">0 saved</span>
+          </div>
+          <p class="helper">Save named robot setups on the Ant Core, then switch between drive, weapon, servo, battery, and network configurations without reflashing.</p>
+          <div class="form-grid">
+            <label>Saved Profile <select id="profileSelect"></select></label>
+          </div>
+          <div class="actions">
+            <button id="saveProfileBtn" class="text-button" type="button">Save Profile</button>
+            <button id="loadProfileBtn" class="text-button" type="button">Load Profile</button>
+            <button id="refreshProfilesBtn" class="text-button" type="button">Refresh</button>
+            <button id="deleteProfileBtn" class="text-button danger" type="button">Delete Profile</button>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Network</h2>
+            <button id="saveWifiBtn" class="text-button" type="button">Save</button>
+          </div>
+          <p class="helper">Station mode joins a trusted Wi-Fi network for LAN debugging. The Ant Core access point remains online as a fallback.</p>
+          <div class="form-grid">
+            <label class="switch"><input id="staEnabled" type="checkbox"> home Wi-Fi enabled</label>
+            <label>SSID <input id="staSsid" type="text" maxlength="32" autocomplete="off"></label>
+            <label>Password <input id="staPassword" type="password" maxlength="63" autocomplete="new-password"></label>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Log</h2>
+            <div class="actions">
+              <button id="exportConfigBtn" class="text-button" type="button">Export Config</button>
+              <input id="importConfigFile" class="hidden-file" type="file" accept=".json,application/json">
+              <button id="importConfigBtn" class="text-button" type="button">Import Config</button>
+              <button id="exportLogsBtn" class="text-button" type="button">Export Log</button>
+              <button id="exportBlackboxBtn" class="text-button" type="button">Export Blackbox</button>
+              <button id="clearBlackboxBtn" class="text-button danger" type="button">Clear Blackbox</button>
+              <button id="clearLogsBtn" class="text-button danger" type="button">Clear Log</button>
+              <button id="resetConfigBtn" class="text-button danger" type="button">Factory Reset</button>
+            </div>
+          </div>
+          <pre id="logBox"></pre>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
